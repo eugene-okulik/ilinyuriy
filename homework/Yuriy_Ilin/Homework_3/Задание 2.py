@@ -3,5 +3,4 @@
 
 x = input()
 y = input()
-
 print(x - y / 1 + x * y)

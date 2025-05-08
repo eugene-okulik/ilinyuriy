@@ -3,7 +3,6 @@
 
 a = input()
 b = input()
-        
 print(f'Сумма: {a + b}')
 print(f'Разность: {a - b}')
 print(f'Произведение: {a * b}')

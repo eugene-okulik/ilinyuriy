@@ -5,6 +5,5 @@ import math
 
 a = input()
 b = input()
-
 print((a + b) / 2)  # среднее арифметическое
 print(math.sqrt(a * b))  # среднее геометрическое

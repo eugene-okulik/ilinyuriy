@@ -2,7 +2,7 @@
 # в бесконечную рекурсию :D
 
 def deco(func):
-    def wrapper(s, count = 1):
+    def wrapper(s, count=1):
         for _ in range(count):
             func(s)
     return wrapper

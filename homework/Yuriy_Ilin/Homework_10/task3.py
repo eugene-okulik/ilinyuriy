@@ -1,5 +1,5 @@
 def deco(func):
-    def wrapper(first, second, operation = None):
+    def wrapper(first, second, operation=None):
         if first == second:
             return func(first, second, '+')
         elif first > second:

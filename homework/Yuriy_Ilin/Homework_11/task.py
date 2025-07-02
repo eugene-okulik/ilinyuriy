@@ -2,14 +2,12 @@ class Book:
     material = 'бумага'
     text = True
 
-
     def __init__(self, title, author, count_pages, isbn, reserve=False):
         self.title = title
         self.author = author
         self.count_pages = count_pages
         self.isbn = isbn
         self.reserve = reserve
-
 
     def get_info(self):
         lst = [
@@ -42,7 +40,6 @@ class SchoolBook(Book):
         self.subject = subject
         self.number_group = number_group
         self.tasks = tasks
-
 
     def get_info(self):
         lst = [

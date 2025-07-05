@@ -26,7 +26,7 @@ class Flower:
             f"lifespan={self.lifespan}, "
             f"price={self.price}"
         )
-    
+
 
 class Rose(Flower):
     def __init__(self, color, freshness, stem_length, lifespan, price):

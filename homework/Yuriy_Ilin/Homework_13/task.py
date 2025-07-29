@@ -1,8 +1,8 @@
 import datetime
 from pathlib import Path
 
-current_path = Path(__file__).resolve()
-data_path = current_path.parent.parent / "eugene_okulik" / "hw_13" / "data.txt"
+current_path = Path(__file__)
+data_path = current_path.resolve().parents[2] / "eugene_okulik" / "hw_13" / "data.txt"
 abs_path = data_path.resolve()  # Создание абсолютного пути для доп безопасности
 
 

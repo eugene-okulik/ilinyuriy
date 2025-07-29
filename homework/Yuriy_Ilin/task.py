@@ -14,7 +14,7 @@ def get_dates():
 
         # Проверка файл ли лежит в абсолютном пути
         if not abs_path.is_file():
-            raise IsADirectoryError(f"Это не файл")
+            raise IsADirectoryError("Это не файл")
 
         with open(abs_path) as file:
             line = file.readlines()
@@ -38,12 +38,11 @@ def get_dates():
         date_now = datetime.datetime.now()
         print(f"Дата {date_3} была {(date_now - date_3).days} назад")
 
-
     except FileNotFoundError:
         print(f"Файл не найден в: {abs_path}")
 
     except IsADirectoryError:
-        print(f"Это не файл")
+        print("Это не файл")
 
     except PermissionError as e:
         print("Недостаточно прав для чтения файла:", e)

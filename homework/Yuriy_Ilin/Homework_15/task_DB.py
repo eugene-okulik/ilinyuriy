@@ -6,11 +6,11 @@ def add_connection():
     '''Создаем соединение'''
     try:
         db = mysql.connect(
-            user = 'st-onl',
-            passwd = 'AVNS_tegPDkI5BlB2lW5eASC',
-            host = 'db-mysql-fra1-09136-do-user-7651996-0.b.db.ondigitalocean.com',
-            port = 25060,
-            database = 'st-onl'
+            user='st-onl',
+            passwd='AVNS_tegPDkI5BlB2lW5eASC',
+            host='db-mysql-fra1-09136-do-user-7651996-0.b.db.ondigitalocean.com',
+            port=25060,
+            database='st-onl'
         )
         if db.is_connected():
             return db
@@ -157,7 +157,7 @@ def get_marks_student(db, student_id):
     try:
         with db.cursor(dictionary=True) as cursor:
             query = """
-                SELECT DISTINCT s.name, s.second_name, m.value, l.title 
+                SELECT DISTINCT s.name, s.second_name, m.value, l.title
                 FROM students s LEFT JOIN marks m ON m.student_id = s.id
                 LEFT JOIN lessons l ON l.id = m.lesson_id
                 WHERE s.id = %s;
@@ -176,7 +176,7 @@ def get_books_student(db, student_id):
     try:
         with db.cursor(dictionary=True) as cursor:
             query = """
-                SELECT s.name, s.second_name, b.title 
+                SELECT s.name, s.second_name, b.title
                 FROM students s JOIN books b ON s.id = b.taken_by_student_id
                 WHERE s.id = %s
             """
@@ -195,15 +195,15 @@ def get_info_student(db, student_id, student_id2):
         with db.cursor(dictionary=True) as cursor:
             query = """
                 SELECT
-	            s.id AS 'Id student', s.name, s.second_name,
-	            g.id AS 'Id group', g.title AS 'title group', g.start_date, g.end_date,
-	            l.title AS 'title lesson',
-	            sub.title AS 'title subject',
-	            m.value,
-	            (SELECT GROUP_CONCAT(title SEPARATOR ', ') FROM books WHERE taken_by_student_id = %s) AS books
+                    s.id AS 'Id student', s.name, s.second_name,
+                    g.id AS 'Id group', g.title AS 'title group', g.start_date, g.end_date,
+                    l.title AS 'title lesson',
+                    sub.title AS 'title subject',
+                    m.value,
+                    (SELECT GROUP_CONCAT(title SEPARATOR ', ') FROM books WHERE taken_by_student_id = %s) AS books
                 FROM students s
-                LEFT JOIN `groups` g ON s.group_id  = g.id
-                LEFT JOIN marks m ON m.student_id  = s.id
+                LEFT JOIN `groups` g ON s.group_id = g.id
+                LEFT JOIN marks m ON m.student_id = s.id
                 LEFT JOIN lessons l ON m.lesson_id = l.id
                 LEFT JOIN subjects sub ON l.subject_id = sub.id
                 WHERE s.id = %s;
@@ -256,13 +256,3 @@ print(get_books_student(db, student_id))
 print(get_info_student(db, student_id, student_id))
 
 db.close()
-
-
-
-
-
-
-
-
-
-

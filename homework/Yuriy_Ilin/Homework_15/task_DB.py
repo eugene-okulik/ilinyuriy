@@ -40,7 +40,7 @@ def insert_row_db(db, table: str, columns: list | tuple, values: list | tuple):
     if table not in allowed_tables:
         raise ValueError("Недопустимая таблица!")
 
-    if not isinstance(columns, (list, tuple)) or not isinstance(values,(list, tuple)):
+    if not isinstance(columns, (list, tuple)) or not isinstance(values, (list, tuple)):
         raise ValueError("columns и values должны быть 'list' или 'tuple'!")
 
     if len(columns) != len(values):

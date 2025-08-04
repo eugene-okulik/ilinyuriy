@@ -2,6 +2,10 @@ import mysql.connector as mysql
 from mysql.connector import Error
 
 
+# Список допустимых таблиц для ввода
+allowed_tables = {"students", "books", "groups", "subjects", "lessons", "marks"}
+
+
 def add_connection():
     '''Создаем соединение'''
     try:
@@ -19,134 +23,128 @@ def add_connection():
         return None
 
 
-def insert_student(db, name, second_name, group_id=None):
-    '''Создание студента. Изначально, если группа не известна/не создана, можно не указывать group_id'''
+def insert_row_db(db, table: str, columns: list | tuple, values: list | tuple):
+    """
+    Универсальная вставка строки в таблицу.
+
+    :param db: соединение с БД
+    :param table: имя таблицы
+    :param columns: list или tuple строк — имена столбцов
+    :param values: list или tuple — значения для вставки
+    :return: ID добавленной строки
+    """
     if not db or not db.is_connected():
         print("Нет соединения с БД")
         return None
+
+    if table not in allowed_tables:
+        raise ValueError("Недопустимая таблица!")
+
+    if not isinstance(columns, (list, tuple)) or not isinstance(values,(list, tuple)):
+        raise ValueError("columns и values должны быть 'list' или 'tuple'!")
+
+    if len(columns) != len(values):
+        raise ValueError("Количество значений columns и values должно совпадать!")
+
+    if not columns or not values:
+        raise ValueError("Столбцы и значения не могут быть пустыми!")
+
     try:
         with db.cursor() as cursor:
-            query = """
-                INSERT INTO students (name, second_name, group_id)
-                VALUES (%s, %s, %s)
-            """
-            cursor.execute(query, (name, second_name, group_id))
+            columns_str = ', '.join(f"`{col}`" for col in columns)
+            placeholders = ', '.join(['%s'] * len(values))
+            query = f"INSERT INTO `{table}` ({columns_str}) VALUES ({placeholders})"
+            cursor.execute(query, values)
             db.commit()
-            object_id = cursor.lastrowid
-            return object_id
+            return cursor.lastrowid
     except Error as e:
-        print(f"Ошибка при выполнении запроса на добавление студента: {e}")
+        print(f"Ошибка {e}")
+        return None
 
 
-def insert_book(db, title, taken_by_student_id):
-    '''Создание книги'''
+def insert_many_rows_db(db, table: str, columns: list | tuple, values: list):
+    """
+    Универсальная вставка нескольких строк в таблицу.
+
+    :param db: соединение с БД
+    :param table: имя таблицы
+    :param columns: list или tuple строк — имена столбцов
+    :param values: list - список добавляемых данных list[tuple | list]
+    :return: кол-во добавленных строк
+    """
     if not db or not db.is_connected():
         print("Нет соединения с БД")
         return None
+
+    if table not in allowed_tables:
+        raise ValueError("Недопустимая таблица!")
+
+    if not isinstance(columns, (list, tuple)):
+        raise ValueError("columns должен быть 'list' или 'tuple'!")
+
+    if not isinstance(values, list) or not all(isinstance(row, (list, tuple)) for row in values):
+        raise ValueError("values должен быть списком кортежей или списков!")
+
+    if not columns or not values:
+        raise ValueError("Столбцы и значения не могут быть пустыми!")
+
+    for row in values:
+        if len(row) != len(columns):
+            raise ValueError("Каждое значение должно соответствовать количеству столбцов!")
+
     try:
         with db.cursor() as cursor:
-            query = """
-                INSERT INTO books (title, taken_by_student_id)
-                VALUES (%s, %s)
-            """
-            cursor.execute(query, (title, taken_by_student_id))
+            columns_str = ', '.join(f"`{col}`" for col in columns)
+            placeholders = ', '.join(['%s'] * len(columns))
+            query = f"INSERT INTO `{table}` ({columns_str}) VALUES ({placeholders})"
+            cursor.executemany(query, values)
             db.commit()
-            object_id = cursor.lastrowid
-            return object_id
+            return cursor.rowcount
     except Error as e:
-        print(f"Ошибка при выполнении запроса на добавление книги: {e}")
+        print(f"Ошибка при множественной вставке: {e}")
+        return None
 
 
-def insert_group(db, title, start_date, end_date):
-    '''Создание группы'''
+def update_rows_db(db, table: str, column_value: dict, where_value: dict):
+    """
+    Универсальный способ обновить запись в таблице.
+
+    :param db: соединение с БД
+    :param table: имя таблицы
+    :param column_value: dict — столбец: новое значение поля
+    :param where_value: dict — столбец: значение поля, по которому происходит изменение данных
+    :return: кол-во измененных строк
+    """
     if not db or not db.is_connected():
         print("Нет соединения с БД")
         return None
+
+    if table not in allowed_tables:
+        raise ValueError("Недопустимая таблица!")
+
+    if not isinstance(column_value, dict) or not isinstance(where_value, dict):
+        raise ValueError("column_value и where_value должны быть 'dict'!")
+
+    for key, value in column_value.items():
+        if not key or value is None:
+            raise ValueError(f"Недопустимая пара ключ/значение: '{key}': {value}")
+
+    for key, value in where_value.items():
+        if not key or value is None:
+            raise ValueError(f"Недопустимая пара ключ/значение: '{key}': {value}")
+
     try:
         with db.cursor() as cursor:
-            query = """
-                INSERT INTO `groups` (title, start_date, end_date)
-                VALUES (%s, %s, %s)
-            """
-            cursor.execute(query, (title, start_date, end_date))
+            set_clause = ', '.join(f"`{col}` = %s" for col in column_value)
+            where_clause = ' AND '.join(f"`{col}` = %s" for col in where_value)
+            query = f"UPDATE {table} SET {set_clause} WHERE {where_clause}"
+            values = tuple(column_value.values()) + tuple(where_value.values())
+            cursor.execute(query, values)
             db.commit()
-            object_id = cursor.lastrowid
-            return object_id
+            return cursor.rowcount
     except Error as e:
-        print(f"Ошибка при выполнении запроса на создание группы: {e}")
-
-
-def insert_subject(db, title):
-    '''Создание учебного предмета'''
-    if not db or not db.is_connected():
-        print("Нет соединения с БД")
+        print(f"Ошибка {e}")
         return None
-    try:
-        with db.cursor() as cursor:
-            query = """
-                INSERT INTO subjects (title)
-                VALUES (%s)
-            """
-            cursor.execute(query, (title,))
-            db.commit()
-            object_id = cursor.lastrowid
-            return object_id
-    except Error as e:
-        print(f"Ошибка при выполнении запроса на создание учебного предмета: {e}")
-
-
-def insert_lesson(db, title, subject_id):
-    '''Создание занятия'''
-    if not db or not db.is_connected():
-        print("Нет соединения с БД")
-        return None
-    try:
-        with db.cursor() as cursor:
-            query = """
-                INSERT INTO lessons (title, subject_id)
-                VALUES (%s, %s)
-            """
-            cursor.execute(query, (title, subject_id))
-            db.commit()
-            object_id = cursor.lastrowid
-            return object_id
-    except Error as e:
-        print(f"Ошибка при выполнении запроса на создание занятия: {e}")
-
-
-def insert_mark(db, value, lesson_id, student_id):
-    '''Добавление оценок'''
-    if not db or not db.is_connected():
-        print("Нет соединения с БД")
-        return None
-    try:
-        with db.cursor() as cursor:
-            query = """
-                INSERT INTO marks (value, lesson_id, student_id)
-                VALUES (%s, %s, %s)
-            """
-            cursor.execute(query, (value, lesson_id, student_id))
-            db.commit()
-            object_id = cursor.lastrowid
-            return object_id
-    except Error as e:
-        print(f"Ошибка при выполнении запроса на добавление оценки: {e}")
-
-
-def update_student_group(db, group_id, student_id):
-    '''Добавление группы студенту'''
-    if not db or not db.is_connected():
-        print("Нет соединения с БД")
-        return None
-    try:
-        with db.cursor() as cursor:
-            query = """
-                UPDATE students SET group_id = %s WHERE id = %s
-            """
-            cursor.execute(query, (group_id, student_id))
-            db.commit()
-    except Error as e:
-        print(f"Ошибка при выполнении запроса на обновление группы студента: {e}")
 
 
 def get_marks_student(db, student_id):
@@ -186,7 +184,7 @@ def get_books_student(db, student_id):
         print(f"Ошибка при выполнении запроса на получение книг студента: {e}")
 
 
-def get_info_student(db, student_id, student_id2):
+def get_info_student(db, student_id):
     '''Получение всех оценок студента'''
     if not db or not db.is_connected():
         print("Нет соединения с БД")
@@ -217,42 +215,50 @@ def get_info_student(db, student_id, student_id2):
 # Создаем соединение
 db = add_connection()
 
-# Создаем студента и сразу получаем его id
-student_id = insert_student(db, 'Пабло', 'Искалбар')
+# Создаем и получаем id студента
+student_id = insert_row_db(db, 'students', ['name', 'second_name'], ('Марк', 'Авралий'))
 
-# Создаем книг и получение их id!!!
-book_1 = insert_book(db, 'Гадкий утенок', student_id)
-book_2 = insert_book(db, '365 дней', student_id)
+# Создаем книги для студента
+count_books = insert_many_rows_db(
+    db, 'books',
+    ['title', 'taken_by_student_id'], [('Книга о быте', student_id), ('Вавилон & Python', student_id)]
+)
 
-# Создаем группу и сразу получаем ее id !!!
-group_id = insert_group(db, 'Острые QAзырьки', 'Jan 2025', 'Dec 2025')
+# Создаем группу и получаем ее id
+group_id = insert_row_db(
+    db, 'groups', ['title', 'start_date', 'end_date'], ('Project AQA', 'Jan 2025', 'Dec 2025')
+)
 
-# Добавляем студента в группу !!!
-update_student_group(db, group_id, student_id)
+# Добавляем (изменяем) группу студента
+update_rows_db(db, 'students', {'group_id': group_id}, {'id': student_id})
 
-# Создаем учебные предметы!!!
-subject_1 = insert_subject(db, 'Математика и алгоритмы')
-subject_2 = insert_subject(db, 'Литература SQL')
+# Создание учебных предметов
+subjects_1 = insert_row_db(db, 'subjects', ['title'], ('MegaSub 1',))
+subjects_2 = insert_row_db(db, 'subjects', ['title'], ('UltraSub 1',))
 
-# Создаем занятие
-lesson_1 = insert_lesson(db, 'Занятие по математике', subject_1)
-lesson_2 = insert_lesson(db, 'Занятие по высшей математике', subject_1)
-lesson_3 = insert_lesson(db, 'Занятие по SQL', subject_2)
-lesson_4 = insert_lesson(db, 'Занятие по БД', subject_2)
+# Создание занятий
+lesson_1 = insert_row_db(db, 'lessons', ['title', 'subject_id'], ('Занятие v1.0', subjects_1))
+lesson_2 = insert_row_db(db, 'lessons', ['title', 'subject_id'], ('Занятие v2.0', subjects_1))
+lesson_3 = insert_row_db(db, 'lessons', ['title', 'subject_id'], ('Занятие v3.0', subjects_2))
+lesson_4 = insert_row_db(db, 'lessons', ['title', 'subject_id'], ('Занятие v4.0', subjects_2))
 
-# Добавляем оценки
-mark_lesson_1 = insert_mark(db, 5, lesson_1, student_id)
-mark_lesson_2 = insert_mark(db, 4, lesson_2, student_id)
-mark_lesson_3 = insert_mark(db, 5, lesson_3, student_id)
-mark_lesson_4 = insert_mark(db, 3, lesson_4, student_id)
+# Создание оценок
+count_marks = insert_many_rows_db(
+    db, 'marks',
+    ['value', 'lesson_id', 'student_id'],
+    [(5, lesson_1, student_id),
+     (5, lesson_2, student_id),
+     (3, lesson_3, student_id),
+     (1, lesson_4, student_id)]
+)
 
 # Все оценки студента (Получение только столбцов ФИО, оценки и предмета)
 print(get_marks_student(db, student_id))
 
-# Все оценки студента (Получение только столбцов ФИО, оценки и предмета)
+# Все книги студента
 print(get_books_student(db, student_id))
 
 # Вся информация по студенту
-print(get_info_student(db, student_id, student_id))
+print(get_info_student(db, student_id))
 
 db.close()
